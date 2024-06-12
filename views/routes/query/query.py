@@ -51,11 +51,13 @@ def removeDuplicatesRef(data):
 def ask_question(client,messages,data):
     response = client.chat.completions.create(messages=messages,
                                             temperature=data['temperature'], frequency_penalty=1,
-                                            max_tokens=data['maxTokens'],timeout=openai_req_timeout ,model=data['model'], stream=True)
-    for chunk in response:
-        if type(chunk.choices[0].delta.content)==str:
-            yield chunk.choices[0].delta.content
-    return 
+                                            max_tokens=data['maxTokens'],timeout=openai_req_timeout ,model=data['model'])
+
+    return response.choices[0].message.content
+    # for chunk in response:
+    #     if type(chunk.choices[0].delta.content)==str:
+    #         yield chunk.choices[0].delta.content
+    # return 
 
 
         
@@ -76,7 +78,7 @@ def embeddingQuery():
             return {"error": f"{attr} attribute is missing!"},400        
         elif type(data[attr])==str and data[attr].strip()=='':
             return {"error": f"{attr} attribute is empty!"},400  
-        
+    headers = {"Transfer-Encoding": "chunked", "Content-Type": "application/json"}
     if 'openAIKey' in data:
         pass
     else:
@@ -135,6 +137,8 @@ def embeddingQuery():
     # successMessage={
     #     "answer":answer
     # }
-    headers = {"Transfer-Encoding": "chunked", "Content-Type": "application/json"}
+    
     client =OpenAI(api_key=data['openAIKey'])  
-    return Response(ask_question(client,messages,data), headers=headers, status=200)   
+    answer = ask_question(client, messages, data)
+    successMessage = {"answer": answer}
+    return (successMessage),200
